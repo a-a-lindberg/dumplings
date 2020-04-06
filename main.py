@@ -78,5 +78,10 @@ def logout():
     return redirect("/")
 
 
+@app.route('/user')
+def user_profile():
+    return render_template('profile_user.html', title='You')
+
+
 if __name__ == '__main__':
     main()

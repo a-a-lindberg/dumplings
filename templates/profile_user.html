@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block content %}
+<script src="//cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/user_style.css') }}" />
+
+<div class="container portfolio">
+	<div class="row">
+		<div class="col-md-12">
+			<div class="heading">
+              <h2>User name</h2>
+			</div>
+		</div>
+	</div>
+	<div class="bio-info">
+		<div class="row">
+			<div class="col-md-6">
+				<div class="row">
+					<div class="col-md-12">
+						<div class="bio-image">
+							<img src="https://image.ibb.co/f5Kehq/bio-image.jpg" alt="image" />
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="col-md-6">
+				<div class="bio-content">
+					<h1>Hi there, I'm Kshiti</h1>
+					<h6>I am a fresh web designer and I create custom web designs. I'm skilled at writing well-designed, testable and efficient code using current best practices in Web development. I'm a fast learner, hard worker and team player who is proficient in making creative and innovative web pages.</h6>
+					<p>P.S I have no special talent, I'm just passionately curious ;)</p>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+{% endblock %}
