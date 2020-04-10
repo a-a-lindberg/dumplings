@@ -83,5 +83,10 @@ def user_profile():
     return render_template('profile_user.html', title='You')
 
 
+@app.route('/group')
+def group():
+    return render_template('group.html', title='Name Group')
+
+
 if __name__ == '__main__':
     main()
