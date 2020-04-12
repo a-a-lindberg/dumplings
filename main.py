@@ -1,18 +1,39 @@
-from flask import render_template, Flask
-from flask_login import LoginManager, login_user, login_required, logout_user
-from werkzeug.utils import redirect
+import datetime
+import os
 
+from flask import render_template, Flask, request, flash
+from flask_login import LoginManager, login_user, login_required, logout_user
+from werkzeug.utils import redirect, secure_filename
+
+from config import Config
 from data import db_session
+from data.group import Group
+from data.posts import Post
 from data.users import User
 from form.login import LoginForm
+from form.post import PostForm
 from form.register import RegisterForm
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'dumplings'
+app.config.from_object(Config)
 
 
 login_manager = LoginManager()
 login_manager.init_app(app)
+
+
+#  Upload files
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1] in app.config['ALLOWED_EXTENSIONS']
+
+
+def upload_file():
+    if request.method == 'POST':
+        file = request.files['file']
+        if file and allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+            file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
 
 
 def main():
@@ -83,9 +104,35 @@ def user_profile():
     return render_template('profile_user.html', title='You')
 
 
-@app.route('/group')
+@app.route('/group', methods=['GET', 'POST'])
 def group():
-    return render_template('group.html', title='Name Group')
+    session = db_session.create_session()
+    form = PostForm()
+    if form.validate_on_submit():
+        file = form.file_url.data
+        if file and allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+            way_to_file = os.path.join(app.config['UPLOAD_FOLDER_GROUP'], filename)
+            file.save(way_to_file)
+        post = Post(text=form.text.data,
+                    date=datetime.datetime.now().strftime("%A %d %b %Y (%H:%M %Z)"),
+                    autor_id=1,
+                    file=way_to_file)
+        session.add(post)
+        session.commit()
+        return redirect('/group')
+    posts = session.query(Post).filter(Post.autor_id == 1)
+    return render_template('group.html', title='Авторизация', form=form, posts=posts)
+
+
+@app.route('/makegroup')
+def make_group():
+    return render_template('group.html', title='you')
+
+
+@app.route('/group/<int:id_group>')
+def edit_group(id_group):
+    return render_template('group.html', title='group edit')
 
 
 if __name__ == '__main__':

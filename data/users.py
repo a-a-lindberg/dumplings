@@ -1,4 +1,5 @@
 import sqlalchemy
+from sqlalchemy import orm
 from sqlalchemy_serializer import SerializerMixin
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -15,6 +16,8 @@ class User(SqlAlchemyBase, SerializerMixin, UserMixin):
     email = sqlalchemy.Column(sqlalchemy.String,
                               index=True, unique=True, nullable=True)
     hashed_password = sqlalchemy.Column(sqlalchemy.String, nullable=True)
+
+
 
     def __str__(self):
         return f"{self.surname}, {self.name}, {self.age}"
