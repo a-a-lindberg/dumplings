@@ -1,8 +1,8 @@
 import datetime
 import os
 
-from flask import render_template, Flask, request, flash
-from flask_login import LoginManager, login_user, login_required, logout_user
+from flask import render_template, Flask, request, flash, g
+from flask_login import LoginManager, login_user, login_required, logout_user, current_user
 from werkzeug.utils import redirect, secure_filename
 
 from config import Config
@@ -13,6 +13,8 @@ from data.users import User
 from form.login import LoginForm
 from form.post import PostForm
 from form.register import RegisterForm
+from form.edit import EditForm
+from form.delete import DeleteForm
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -40,6 +42,9 @@ def main():
     db_session.global_init("db/users.sqlite")
     app.run()
 
+@app.before_request
+def before_request():
+    g.user = current_user
 
 @app.route("/")
 def index():
@@ -99,9 +104,88 @@ def logout():
     return redirect("/")
 
 
-@app.route('/user')
-def user_profile():
-    return render_template('profile_user.html', title='You')
+@app.route("/delete", methods=['GET', 'POST'])
+def delete():
+    form = DeleteForm()
+    if form.validate_on_submit():
+        if form.password.data != form.password_again.data:
+            return render_template('delete.html', title='Deletion',
+                                   form=form,
+                                   message="Пароли не совпадают")
+        else:
+            session = db_session.create_session()
+            my = g.user.id
+            user = session.query(User).filter(User.id == my).first()
+            if user.check_password(form.password.data):
+                session.delete(user)
+                session.commit()
+                return redirect('/register')
+    return render_template('delete.html', title='Deletion', form=form)
+
+
+@app.route('/user/<id>', methods=['GET', 'POST'])
+@login_required
+def user_profile(id):
+    session = db_session.create_session()
+    user = session.query(User).filter_by(id=id).first()
+    form = PostForm()
+    if user == None:
+        flash('User ' + id + ' not found.')
+        return render_template('login.html')
+    else:
+        you = user.name
+        my = g.user.id
+        info = user.about
+        user_id = int(id)
+        if my == user_id:
+            if form.validate_on_submit():
+                file = form.file_url.data
+                if file and allowed_file(file.filename):
+                    filename = secure_filename(file.filename)
+                    way_to_file = os.path.join(app.config['UPLOAD_FOLDER_GROUP'], filename)
+                    file.save(way_to_file)
+                    post = Post(text=form.text.data,
+                                date=datetime.datetime.now().strftime("%A %d %b %Y (%H:%M %Z)"),
+                                autor_id=my,
+                                file=way_to_file)
+                    session.add(post)
+                    session.commit()
+                    return redirect(f'{id}')
+                elif file.filename == '':
+                    post = Post(text=form.text.data,
+                                date=datetime.datetime.now().strftime("%A %d %b %Y (%H:%M %Z)"),
+                                autor_id=my)
+                    session.add(post)
+                    session.commit()
+                    return redirect(f'{id}')
+            posts = session.query(Post).filter_by(autor_id=user_id).order_by(Post.id.desc())
+            return render_template('profile_user.html', title=you, you=you, user_id=user_id, my_id=my, info=info,
+                                   form=form, posts=posts)
+        else:
+            posts = session.query(Post).filter_by(autor_id=user_id).order_by(Post.id.desc())
+            return render_template('profile_user.html', title=you, you=you, user_id=user_id, my_id=my, info=info,
+                                   form=form, posts=posts)
+
+
+
+@app.route('/edit', methods=['GET', 'POST'])
+def edit():
+    form = EditForm()
+    if form.validate_on_submit():
+        session = db_session.create_session()
+        user_id = g.user.id
+        user = session.query(User).filter_by(id=int(user_id)).first()
+        user.about = form.about_me.data
+        session.commit()
+        flash('Your changes have been saved.')
+        return redirect(f'user/{user_id}')
+    else:
+        session = db_session.create_session()
+        user_id = g.user.id
+        user = session.query(User).filter_by(id=int(user_id)).first()
+        form.about_me.data = user.about
+    return render_template('edit.html',
+                           form=form)
 
 
 @app.route('/group', methods=['GET', 'POST'])

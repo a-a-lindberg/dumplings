@@ -16,6 +16,7 @@ class User(SqlAlchemyBase, SerializerMixin, UserMixin):
     email = sqlalchemy.Column(sqlalchemy.String,
                               index=True, unique=True, nullable=True)
     hashed_password = sqlalchemy.Column(sqlalchemy.String, nullable=True)
+    about = sqlalchemy.Column(sqlalchemy.String, nullable=True)
 
 
 
