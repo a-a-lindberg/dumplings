@@ -9,7 +9,7 @@
 	<div class="row">
 		<div class="col-md-12">
 			<div class="heading">
-              <h2>User name</h2>
+              <h2>{{you}}</h2>
 			</div>
 		</div>
 	</div>
@@ -27,13 +27,23 @@
 			<div class="col-md-6">
 				<div class="bio-content">
 					<h1>About user</h1>
-					<h6>More information</h6>
+					{% if info == "" %}
+					<h6>No info yet ;)</h6>
+					{% else %}
+					<h6>{{info}}</h6>
+					{% endif %}
+					{% if my_id == user_id %}
+					<p><a href="{{url_for('edit')}}">Edit</a></p>
+					{% endif %}
 				</div>
 			</div>
 		</div>
 	</div>
 </div>
 <div class="container-fluid gedf-wrapper">
+	<form action="" method="post" enctype=multipart/form-data>
+                {{ form.hidden_tag() }}
+                {{ form.csrf_token }}
 	  <!-- Post /////-->
 	<div class="card gedf-card" style="background-color: #343a40;">
 		<div class="card-header">
@@ -54,15 +64,15 @@
 				<div class="tab-pane fade show active" id="posts" role="tabpanel" aria-labelledby="posts-tab">
 					<div class="form-group">
 						<label class="sr-only" for="message">post</label>
-						<textarea class="form-control" id="message" rows="3" placeholder="What are you thinking?"></textarea>
+						 {{ form.text(class="form-control", id="message", rows="3", placeholder="What are you thinking?")}}
 					</div>
 
 				</div>
 				<div class="tab-pane fade" id="images" role="tabpanel" aria-labelledby="images-tab">
 					<div class="form-group">
 						<div class="custom-file">
-							<input type="file" class="custom-file-input" id="customFile">
-							<label class="custom-file-label" for="customFile">Upload image</label>
+							{{form.file_url(type="file", class="form-control-file", id="customFile")}}
+                                        <label class="custom-file-label" for="customFile">file</label>
 						</div>
 					</div>
 					<div class="py-4"></div>
@@ -70,7 +80,7 @@
 			</div>
 			<div class="btn-toolbar justify-content-between">
 				<div class="btn-group">
-					<button type="submit" class="btn btn-warning">share</button>
+					{{form.submit(type="submit", class="btn btn-warning", paseholder="share")}}
 				</div>
 				<div class="btn-group">
 					<button id="btnGroupDrop1" type="button" class="btn btn-link dropdown-toggle" data-toggle="dropdown" aria-haspopup="true"
@@ -86,8 +96,10 @@
 			</div>
 		</div>
 	</div>
+	</form>
 	<!--end post-->
 	 <!--posted-->
+	{% for item in posts%}
         <div class="card gedf-card" style="background-color: #343a40;">
             <div class="card-header">
                 <div class="d-flex justify-content-between align-items-center">
@@ -96,8 +108,8 @@
                             <img class="rounded-circle" width="50" src="{{ url_for('static', filename='img/boy.jpg') }}" alt="">
                         </div>
                         <div class="ml-2">
-                            <div class="h5 m-0 color-text">@UserIdName</div>
-                            <div class="h7 text-muted">User</div>
+                            <div class="h5 m-0 color-text">@{{user_id}}</div>
+                            <div class="h7 text-muted">{{you}}</div>
                         </div>
                     </div>
                     <div>
@@ -116,21 +128,27 @@
                 </div>
             </div>
             <div class="card-body">
-                <div class="text-muted h7 mb-2"> <i class="fa fa-clock-o"></i>10 min ago</div>
-                <a class="card-link" href="#">
-                    <h5 class="card-title">Adress</h5>
-                </a>
-
+                <div class="text-muted h7 mb-2"> <i class="fa fa-clock-o"></i>{{ item.time }}</div>
                 <p class="card-text color-text">
-                    text
+                    {{item.text}}
                 </p>
+                {% if item.file%}
+                     <img width="350" src="{{item.file}}" alt="post_image">
+                {% endif %}
             </div>
             <div class="card-footer">
                 <a href="#" class="card-link"><i class="fa fa-gittip"></i> Like</a>
                 <a href="#" class="card-link"><i class="fa fa-comment"></i> Comment</a>
                 <a href="#" class="card-link"><i class="fa fa-mail-forward"></i> Share</a>
+				<div>
+					{% if my_id == user_id %}
+					<a href="/post_delete/{{ item.id }}" class="btn btn-warning">Удалить</a>
+					<a href="/post_edit/{{ item.id }}" class="btn btn-warning">Изменить</a>
+								</div>
+							{% endif %}
             </div>
         </div>
+	{% endfor %}
       <!--end posted-->
 </div>
 {% endblock %}

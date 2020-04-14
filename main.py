@@ -124,7 +124,6 @@ def delete():
 
 
 @app.route('/user/<id>', methods=['GET', 'POST'])
-@login_required
 def user_profile(id):
     session = db_session.create_session()
     user = session.query(User).filter_by(id=id).first()
@@ -166,6 +165,43 @@ def user_profile(id):
             return render_template('profile_user.html', title=you, you=you, user_id=user_id, my_id=my, info=info,
                                    form=form, posts=posts)
 
+@app.route('/post_edit/<int:id>', methods=['GET', 'POST'])
+@login_required
+def post_edit(id):
+    form = PostForm()
+    session = db_session.create_session()
+    post = session.query(Post).filter_by(id=id).first()
+    prev_text = post.text
+    my = g.user.id
+    if request.method == 'POST':
+        new_text = request.form.get("area")
+        file = form.file_url.data
+        if file and allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+            way_to_file = os.path.join(app.config['UPLOAD_FOLDER_GROUP'], filename)
+            file.save(way_to_file)
+            post.text = new_text
+            session.commit()
+            return redirect(f'/user/{g.user.id}')
+        elif file.filename == '':
+            post.text = new_text
+            session.commit()
+            return redirect(f'/user/{g.user.id}')
+    return render_template('delete_post.html', form=form, prev_text=prev_text)
+
+
+@app.route('/post_delete/<int:id>', methods=['GET', 'POST'])
+@login_required
+def post_delete(id):
+    session = db_session.create_session()
+    news = session.query(Post).filter(Post.id == id,
+                                      Post.autor_id == g.user.id).first()
+    if news:
+        session.delete(news)
+        session.commit()
+    else:
+        abort(404)
+    return redirect(f'/user/{g.user.id}')
 
 
 @app.route('/edit', methods=['GET', 'POST'])
