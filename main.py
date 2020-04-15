@@ -1,9 +1,9 @@
 import datetime
 import os
 import requests
-import json
 import random
 
+from flask_login import AnonymousUserMixin
 from flask import render_template, Flask, request, flash, g
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
 from werkzeug.utils import redirect, secure_filename
@@ -22,8 +22,13 @@ from form.delete import DeleteForm
 app = Flask(__name__)
 app.config.from_object(Config)
 
+class Anonymous(AnonymousUserMixin):
+    def __init__(self):
+        self.id = '0'
+
 
 login_manager = LoginManager()
+login_manager.anonymous_user = Anonymous
 login_manager.init_app(app)
 
 
@@ -146,9 +151,9 @@ def user_profile(id):
         return render_template('login.html')
     else:
         you = user.name
-        my = current_user
         info = user.about
         user_id = int(id)
+        my = g.user.id
         if my == user_id:
             if form.validate_on_submit():
                 file = form.file_url.data
@@ -171,11 +176,11 @@ def user_profile(id):
                     session.commit()
                     return redirect(f'{id}')
             posts = session.query(Post).filter_by(autor_id=user_id).order_by(Post.id.desc())
-            return render_template('profile_user.html', title=you, you=you, user_id=user_id, my_id=g.user.id, info=info,
+            return render_template('profile_user.html', title=you, you=you, user_id=user_id, my_id=my, info=info,
                                    form=form, posts=posts)
         else:
             posts = session.query(Post).filter_by(autor_id=user_id).order_by(Post.id.desc())
-            return render_template('profile_user.html', title=you, you=you, user_id=user_id, my_id=g.user.id, info=info,
+            return render_template('profile_user.html', title=you, you=you, user_id=user_id, my_id=my, info=info,
                                    form=form, posts=posts)
 
 
@@ -278,6 +283,7 @@ def random_joke():
     num = random.randint(1, 21)
     name = "img/laugh/laugh" + str(num) + ".jpg"
     return render_template("joke.html", joke=picture, name=name)
+
 
 if __name__ == '__main__':
     main()
