@@ -171,11 +171,11 @@ def user_profile(id):
                     session.commit()
                     return redirect(f'{id}')
             posts = session.query(Post).filter_by(autor_id=user_id).order_by(Post.id.desc())
-            return render_template('profile_user.html', title=you, you=you, user_id=user_id, my_id=my, info=info,
+            return render_template('profile_user.html', title=you, you=you, user_id=user_id, my_id=g.user.id, info=info,
                                    form=form, posts=posts)
         else:
             posts = session.query(Post).filter_by(autor_id=user_id).order_by(Post.id.desc())
-            return render_template('profile_user.html', title=you, you=you, user_id=user_id, my_id=my, info=info,
+            return render_template('profile_user.html', title=you, you=you, user_id=user_id, my_id=g.user.id, info=info,
                                    form=form, posts=posts)
 
 
