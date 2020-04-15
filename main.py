@@ -1,5 +1,8 @@
 import datetime
 import os
+import requests
+import json
+import random
 
 from flask import render_template, Flask, request, flash, g
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
@@ -24,6 +27,7 @@ login_manager = LoginManager()
 login_manager.init_app(app)
 
 
+
 #  Upload files
 def allowed_file(filename):
     return '.' in filename and \
@@ -45,6 +49,15 @@ def main():
 @app.before_request
 def before_request():
     g.user = current_user
+
+
+@app.route('/game/<id>', methods=['GET', 'POST'])
+def game(id):
+    return render_template("game.html", id=id)
+
+@app.route('/apps')
+def apps():
+    return render_template("apps.html")
 
 @app.route("/")
 def index():
@@ -133,7 +146,7 @@ def user_profile(id):
         return render_template('login.html')
     else:
         you = user.name
-        my = g.user.id
+        my = current_user
         info = user.about
         user_id = int(id)
         if my == user_id:
@@ -164,6 +177,7 @@ def user_profile(id):
             posts = session.query(Post).filter_by(autor_id=user_id).order_by(Post.id.desc())
             return render_template('profile_user.html', title=you, you=you, user_id=user_id, my_id=my, info=info,
                                    form=form, posts=posts)
+
 
 @app.route('/post_edit/<int:id>', methods=['GET', 'POST'])
 @login_required
@@ -254,6 +268,16 @@ def make_group():
 def edit_group(id_group):
     return render_template('group.html', title='group edit')
 
+
+@app.route('/joke')
+def random_joke():
+    api_server = "https://icanhazdadjoke.com/slack"
+    response = requests.get(api_server)
+    json_response = response.json(strict=False)
+    picture = json_response["attachments"][0]["text"]
+    num = random.randint(1, 21)
+    name = "img/laugh/laugh" + str(num) + ".jpg"
+    return render_template("joke.html", joke=picture, name=name)
 
 if __name__ == '__main__':
     main()
