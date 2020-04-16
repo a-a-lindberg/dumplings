@@ -89,8 +89,7 @@
 					</button>
 					<div class="dropdown-menu dropdown-menu-right" aria-labelledby="btnGroupDrop1">
 						<a class="dropdown-item" href="#"><i class="fa fa-globe"></i> Public</a>
-						<a class="dropdown-item" href="#"><i class="fa fa-users"></i> Friends</a>
-						<a class="dropdown-item" href="#"><i class="fa fa-user"></i> Just me</a>
+						<a class="dropdown-item" href="#"><i class="fa fa-user"></i>Just me</a>
 					</div>
 				</div>
 			</div>
@@ -108,8 +107,7 @@
                             <img class="rounded-circle" width="50" src="{{ url_for('static', filename='img/boy.jpg') }}" alt="">
                         </div>
                         <div class="ml-2">
-                            <div class="h5 m-0 color-text">@{{user_id}}</div>
-                            <div class="h7 text-muted">{{you}}</div>
+                            <div class="h5 m-0 color-text">{{you}}</div>
                         </div>
                     </div>
                     <div>
@@ -117,35 +115,25 @@
                             <button class="btn btn-link dropdown-toggle" type="button" id="gedf-drop1" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                 <i class="fa fa-ellipsis-h"></i>
                             </button>
-                            <div class="dropdown-menu dropdown-menu-right" aria-labelledby="gedf-drop1">
-                                <div class="h6 dropdown-header">Configuration</div>
-                                <a class="dropdown-item" href="#">Save</a>
-                                <a class="dropdown-item" href="#">Hide</a>
-                                <a class="dropdown-item" href="#">Report</a>
-                            </div>
+							{% if my_id == user_id %}
+								<div class="dropdown-menu dropdown-menu-right" aria-labelledby="gedf-drop1">
+									<div class="h6 dropdown-header">Configuration</div>
+									<a class="dropdown-item" href="/post_edit/{{ item.id }}">Edit</a>
+									<a class="dropdown-item" href="/post_delete/{{ item.id }}">Delete</a>
+								</div>
+							{% endif %}
                         </div>
                     </div>
                 </div>
             </div>
             <div class="card-body">
-                <div class="text-muted h7 mb-2"> <i class="fa fa-clock-o"></i>{{ item.time }}</div>
+                <div class="text-muted h7 mb-2"> <i class="fa fa-clock-o"></i>{{ item.date }}</div>
                 <p class="card-text color-text">
                     {{item.text}}
                 </p>
                 {% if item.file%}
                      <img width="350" src="{{item.file}}" alt="post_image">
                 {% endif %}
-            </div>
-            <div class="card-footer">
-                <a href="#" class="card-link"><i class="fa fa-gittip"></i> Like</a>
-                <a href="#" class="card-link"><i class="fa fa-comment"></i> Comment</a>
-                <a href="#" class="card-link"><i class="fa fa-mail-forward"></i> Share</a>
-				<div>
-					{% if my_id == user_id %}
-					<a href="/post_delete/{{ item.id }}" class="btn btn-warning">Удалить</a>
-					<a href="/post_edit/{{ item.id }}" class="btn btn-warning">Изменить</a>
-								</div>
-							{% endif %}
             </div>
         </div>
 	{% endfor %}

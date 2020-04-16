@@ -8,7 +8,7 @@ def len_info(field):
         raise ValidationError('Info must be less than 85 characters')
 
 
-class RegisterForm(FlaskForm):
+class GhangeIngoForm(FlaskForm):
     name = StringField('Name of group')
     info = StringField('Info', len_info)
     submit = SubmitField('Submit')
