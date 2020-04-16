@@ -5,7 +5,7 @@ import json
 import random
 
 from flask_login import AnonymousUserMixin
-from flask import render_template, Flask, request, flash, g
+from flask import render_template, Flask, request, flash, g, url_for
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
 from werkzeug.utils import redirect, secure_filename
 
@@ -160,16 +160,16 @@ def user_profile(id):
                     way_to_file = os.path.join(app.config['UPLOAD_FOLDER_USER'], filename)
                     file.save(way_to_file)
                     post = PostUser(text=form.text.data,
-                                date=datetime.datetime.now().strftime("%A %d %b %Y (%H:%M %Z)"),
-                                autor_id=my,
-                                file=way_to_file)
+                                    date=datetime.datetime.now().strftime("%A %d %b %Y (%H:%M)"),
+                                    autor_id=my,
+                                    file=way_to_file)
                     session.add(post)
                     session.commit()
                     return redirect(f'{id}')
                 elif file.filename == '':
                     post = PostUser(text=form.text.data,
-                                date=datetime.datetime.now().strftime("%A %d %b %Y (%H:%M %Z)"),
-                                autor_id=my)
+                                    date=datetime.datetime.now().strftime("%A %d %b %Y (%H:%M)"),
+                                    autor_id=my)
                     session.add(post)
                     session.commit()
                     return redirect(f'{id}')
@@ -187,7 +187,7 @@ def user_profile(id):
 def post_edit(id):
     form = PostForm()
     session = db_session.create_session()
-    post = session.query(Post).filter_by(id=id).first()
+    post = session.query(PostUser).filter_by(id=id).first()
     prev_text = post.text
     my = g.user.id
     if request.method == 'POST':
@@ -198,6 +198,7 @@ def post_edit(id):
             way_to_file = os.path.join(app.config['UPLOAD_FOLDER_USER'], filename)
             file.save(way_to_file)
             post.text = new_text
+            post.file = way_to_file
             session.commit()
             return redirect(f'/user/{g.user.id}')
         elif file.filename == '':
@@ -259,16 +260,31 @@ def group(id_group):
         session.add(post)
         session.commit()
         return redirect(f'/group/{id_group}')
-    posts = session.query(Post).filter(Post.autor_id == id_group)
-    return render_template('group.html', title='Авторизация', form=form, posts=posts)
+    posts = session.query(Post).filter(Post.autor_id == id_group).order_by(Post.id.desc())
+    group_info = session.query(Group).filter(Group.id == id_group)
+    return render_template('group.html', title='Авторизация', form=form, posts=posts, info=group_info)
 
 
-@app.route('/makegroup')
-def make_group():
-    return render_template('group.html', title='you')
+@app.route('/groups')
+def list_group():
+    session = db_session.create_session()
+    groups = session.query(Group).all()
+    return render_template('group_list.html', title='you', groups=groups)
 
 
-@app.route('/group/<int:id_group>/edit')
+@app.route('/group_delete/<int:id_group>')
+def delete_group(id_group):
+    session = db_session.create_session()
+    group = session.query(Group).filter(Group.id == id_group)
+    if group:
+        session.delete(group)
+        session.commit()
+    else:
+        os.abort(404)
+    return redirect('/')
+
+
+@app.route('/group_edit/<int:id_group>', methods=['GET', 'POST'])
 def edit_group(id_group):
     form = GhangeIngoForm()
     if request.method == "GET":
@@ -277,20 +293,27 @@ def edit_group(id_group):
         if group:
             form.name.data = group.name
             form.info.data = group.info
+            form.avatar.data = group.avatar
         else:
             os.abort(404)
     if form.validate_on_submit():
         session = db_session.create_session()
-        group = session.query(Group).filter(Group.id == id_group).first()
+        group = session.query(Group).filter(Group.id == id_group)
         if group:
-            form.name.data = group.name
-            form.info.data = group.info
+            way_to_file = url_for('static', filename='img/deer.png')
+            file = form.avatar.data
+            if file and allowed_file(file.filename):
+                filename = secure_filename(file.filename)
+                way_to_file = os.path.join(app.config['UPLOAD_FOLDER_GROUP'], filename)
+                file.save(way_to_file)
+            group.name = form.name.data
+            group.info = form.info.data
+            group.avatar = way_to_file
             session.commit()
-            return redirect('/group')
+            return redirect(f'/group/{id_group}')
         else:
             os.abort(404)
-    return render_template('edit.html',
-                           form=form)
+    return render_template('edit_group.html', info=group, form=form)
 
 
 @app.route('/joke')
@@ -302,6 +325,7 @@ def random_joke():
     num = random.randint(1, 21)
     name = "img/laugh/laugh" + str(num) + ".jpg"
     return render_template("joke.html", joke=picture, name=name)
+
 
 if __name__ == '__main__':
     main()

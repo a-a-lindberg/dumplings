@@ -5,23 +5,27 @@
 <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/group_style.css') }}"/>
 <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/posts_style.css') }}" />
 
+
   <div class="row">
     <div class="col">
         <div class="card-body">
           <div class="block-img"></div>
             <div class="row">
-                <div class="col-md-6">
-                    <div class="bio-image">
-                        <img width="200" class="block-avatar" src="{{ url_for('static', filename='img/deer.png') }}" alt="image"/>
+                {% for item in info %}
+                    <div class="col-md-6">
+                        <div class="bio-image">
+                            <img width="200" class="block-avatar" src="../{{item.avatar}}" alt="image"/>
+                        </div>
                     </div>
-                </div>
-                <div class="col-md-6">
-                  <div class="bio-content color-text">
-                    <h1>Groupname</h1>
-                    <h6>More information</h6>
-                    <button class="btn btn-outline-warning my-2 my-sm-0">follow</button>
-                  </div>
-                </div>
+                    <div class="col-md-6">
+                      <div class="bio-content color-text">
+                        <h1>{{item.name}}</h1>
+                        <h6>{{item.info}}</h6>
+                        <button class="btn btn-outline-warning my-2 my-sm-0">follow</button>
+                        <a class="btn btn-outline-warning my-2 my-sm-0" href="/group_edit/{{item.id}}">Edit</a>
+                      </div>
+                    </div>
+                {% endfor %}
             </div>
         </div>
       </div>
@@ -106,8 +110,8 @@
                             </button>
                             <div class="dropdown-menu dropdown-menu-right" aria-labelledby="gedf-drop1">
                                 <div class="h6 dropdown-header">Configuration</div>
-                                <a class="dropdown-item" href="#">Edit</a>
-                                <a class="dropdown-item" href="#">Delete</a>
+                                <a class="dropdown-item" href="/post_edit/{{ item.id }}">Edit</a>
+                                <a class="dropdown-item" href="/post_delete/{{ item.id }}">Delete</a>
                             </div>
                         </div>
                     </div>
@@ -120,7 +124,7 @@
                     {{item.text}}
                 </p>
                 {% if item.file%}
-                     <img width="350" src="../{{item.file}}" alt="post_image">
+                     <img width="450" src="../{{item.file}}" alt="post_image">
                 {% endif %}
             </div>
         </div>
