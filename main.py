@@ -224,22 +224,37 @@ def post_delete(id):
 
 @app.route('/edit', methods=['GET', 'POST'])
 def edit():
-    form = EditForm()
+    form = GhangeIngoForm()
+    user_id = g.user.id
+    if request.method == "GET":
+        session = db_session.create_session()
+        user = session.query(User).filter_by(id=int(user_id)).first()
+        if user:
+            form.name.data = user.name
+            form.info.data = user.about
+            form.avatar.data = user.avatar
+        else:
+            os.abort(404)
     if form.validate_on_submit():
         session = db_session.create_session()
-        user_id = g.user.id
         user = session.query(User).filter_by(id=int(user_id)).first()
-        user.about = form.about_me.data
-        session.commit()
-        flash('Your changes have been saved.')
-        return redirect(f'user/{user_id}')
-    else:
-        session = db_session.create_session()
-        user_id = g.user.id
-        user = session.query(User).filter_by(id=int(user_id)).first()
-        form.about_me.data = user.about
-    return render_template('edit.html',
-                           form=form)
+        if user:
+            way_to_file = url_for('static', filename='img/boy.png')
+            file = form.avatar.data
+            if file and allowed_file(file.filename):
+                filename = secure_filename(file.filename)
+                way_to_file = os.path.join(app.config['UPLOAD_FOLDER_GROUP'], filename)
+                file.save(way_to_file)
+            user.name = form.name.data
+            user.about = form.info.data
+            user.avatar = way_to_file
+            session.commit()
+            return redirect(f'/user/{user_id}')
+        else:
+            os.abort(404)
+    num = random.randint(1, 35)
+    name = "img/edit/edit" + str(num) + ".jpg"
+    return render_template('edit_group.html', info=user.about, name=user.name, form=form, im_user=1, pic=name)
 
 
 @app.route('/group/<int:id_group>', methods=['GET', 'POST'])
@@ -313,7 +328,9 @@ def edit_group(id_group):
             return redirect(f'/group/{id_group}')
         else:
             os.abort(404)
-    return render_template('edit_group.html', info=group, form=form)
+    num = random.randint(1, 21)
+    name = "img/edit/edit" + str(num) + ".jpg"
+    return render_template('edit_group.html', info=group, form=form, im_user=0, pic=name)
 
 
 @app.route('/joke')
