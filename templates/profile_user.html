@@ -19,21 +19,20 @@
 				<div class="row">
 					<div class="col-md-12">
 						<div class="bio-image">
-							<img src="{{ url_for('static', filename='img/boy.jpg') }}" alt="image" width="60%"/>
+							<img src="../{{avatar}}" alt="image" width="60%"/>
 						</div>
 					</div>
 				</div>
 			</div>
 			<div class="col-md-6">
 				<div class="bio-content">
-					<h1>About user</h1>
-					{% if info == "" %}
-					<h6>No info yet ;)</h6>
+					{% if info %}
+						<h3>{{info}}</h3>
 					{% else %}
-					<h6>{{info}}</h6>
+						<h3>No info yet ;)</h3>
 					{% endif %}
 					{% if my_id == user_id %}
-					<p><a href="{{url_for('edit')}}">Edit</a></p>
+					<p><a class="btn btn-outline-warning my-2 my-sm-0" href="{{url_for('edit')}}">Edit</a></p>
 					{% endif %}
 				</div>
 			</div>
@@ -106,7 +105,7 @@
                 <div class="d-flex justify-content-between align-items-center">
                     <div class="d-flex justify-content-between align-items-center">
                         <div class="mr-2">
-                            <img class="rounded-circle" width="50" src="{{ url_for('static', filename='img/boy.jpg') }}" alt="">
+                            <img class="rounded-circle" width="50" src="../{{avatar}}" alt="">
                         </div>
                         <div class="ml-2">
                             <div class="h5 m-0 color-text">{{you}}</div>

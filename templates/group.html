@@ -11,21 +11,19 @@
         <div class="card-body">
           <div class="block-img"></div>
             <div class="row">
-                {% for item in info %}
                     <div class="col-md-6">
                         <div class="bio-image">
-                            <img width="200" class="block-avatar" src="../{{item.avatar}}" alt="image"/>
+                            <img width="200" class="block-avatar" src="../{{avatar}}" alt="image"/>
                         </div>
                     </div>
                     <div class="col-md-6">
                       <div class="bio-content color-text">
-                        <h1>{{item.name}}</h1>
-                        <h6>{{item.info}}</h6>
+                        <h1>{{info.name}}</h1>
+                        <h6>{{info.info}}</h6>
                         <button class="btn btn-outline-warning my-2 my-sm-0">follow</button>
-                        <a class="btn btn-outline-warning my-2 my-sm-0" href="/group_edit/{{item.id}}">Edit</a>
+                        <a class="btn btn-outline-warning my-2 my-sm-0" href="/group_edit/{{info.id}}">Edit</a>
                       </div>
                     </div>
-                {% endfor %}
             </div>
         </div>
       </div>
@@ -96,7 +94,7 @@
                 <div class="d-flex justify-content-between align-items-center">
                     <div class="d-flex justify-content-between align-items-center">
                         <div class="mr-2">
-                            <img class="rounded-circle" width="50" src="{{ url_for('static', filename='img/deer.png') }}" alt="">
+                            <img class="rounded-circle" width="50" src="../{{avatar}}" alt="">
                         </div>
                         <div class="ml-2">
                             <div class="h5 m-0 color-text">@GroupIDName</div>

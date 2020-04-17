@@ -1,7 +1,6 @@
 import datetime
 import os
 import requests
-import json
 import random
 
 from flask_login import AnonymousUserMixin
@@ -19,7 +18,6 @@ from form.edit_group import GhangeIngoForm
 from form.login import LoginForm
 from form.post import PostForm
 from form.register import RegisterForm
-from form.edit import EditForm
 from form.delete import DeleteForm
 
 app = Flask(__name__)
@@ -175,11 +173,11 @@ def user_profile(id):
                     return redirect(f'{id}')
             posts = session.query(PostUser).filter_by(autor_id=user_id).order_by(PostUser.id.desc())
             return render_template('profile_user.html', title=you, you=you, user_id=user_id, my_id=my, info=info,
-                                   form=form, posts=posts)
+                                   form=form, posts=posts, avatar=user.avatar)
         else:
             posts = session.query(PostUser).filter_by(autor_id=user_id).order_by(PostUser.id.desc())
             return render_template('profile_user.html', title=you, you=you, user_id=user_id, my_id=my, info=info,
-                                   form=form, posts=posts)
+                                   form=form, posts=posts, avatar=user.avatar)
 
 
 @app.route('/post_edit/<int:id>', methods=['GET', 'POST'])
@@ -243,7 +241,7 @@ def edit():
             file = form.avatar.data
             if file and allowed_file(file.filename):
                 filename = secure_filename(file.filename)
-                way_to_file = os.path.join(app.config['UPLOAD_FOLDER_GROUP'], filename)
+                way_to_file = os.path.join(app.config['UPLOAD_FOLDER_USER'], filename)
                 file.save(way_to_file)
             user.name = form.name.data
             user.about = form.info.data
@@ -276,8 +274,9 @@ def group(id_group):
         session.commit()
         return redirect(f'/group/{id_group}')
     posts = session.query(Post).filter(Post.autor_id == id_group).order_by(Post.id.desc())
-    group_info = session.query(Group).filter(Group.id == id_group)
-    return render_template('group.html', title='Авторизация', form=form, posts=posts, info=group_info)
+    group_info = session.query(Group).filter_by(id=id_group).first()
+    return render_template('group.html', title='Авторизация', form=form, posts=posts, info=group_info,
+                           avatar=group_info.avatar)
 
 
 @app.route('/groups')
@@ -287,11 +286,13 @@ def list_group():
     return render_template('group_list.html', title='you', groups=groups)
 
 
-@app.route('/group_delete/<int:id_group>')
+@app.route('/group_delete/<int:id_group>', methods=['GET', 'POST'])
 def delete_group(id_group):
     session = db_session.create_session()
-    group = session.query(Group).filter(Group.id == id_group)
+    group = session.query(Group).filter_by(id=id_group).first()
     if group:
+        for post in session.query(Post).filter(Post.autor_id == id_group):
+            session.delete(post)
         session.delete(group)
         session.commit()
     else:
@@ -304,7 +305,7 @@ def edit_group(id_group):
     form = GhangeIngoForm()
     if request.method == "GET":
         session = db_session.create_session()
-        group = session.query(Group).filter(Group.id == id_group).first()
+        group = session.query(Group).filter_by(id=id_group).first()
         if group:
             form.name.data = group.name
             form.info.data = group.info
@@ -313,7 +314,7 @@ def edit_group(id_group):
             os.abort(404)
     if form.validate_on_submit():
         session = db_session.create_session()
-        group = session.query(Group).filter(Group.id == id_group)
+        group = session.query(Group).filter_by(id=id_group).first()
         if group:
             way_to_file = url_for('static', filename='img/deer.png')
             file = form.avatar.data
