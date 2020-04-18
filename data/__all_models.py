@@ -1,1 +1,1 @@
-from . import users, group, posts
+from . import users, group, posts, user_posts

@@ -1,24 +1,36 @@
 import datetime
 import os
+import requests
+import random
 
-from flask import render_template, Flask, request, flash
-from flask_login import LoginManager, login_user, login_required, logout_user
+from flask_login import AnonymousUserMixin
+from flask import render_template, Flask, request, flash, g, url_for
+from flask_login import LoginManager, login_user, login_required, logout_user, current_user
 from werkzeug.utils import redirect, secure_filename
 
 from config import Config
 from data import db_session
 from data.group import Group
 from data.posts import Post
+from data.user_posts import PostUser
 from data.users import User
+from form.edit_group import GhangeIngoForm
 from form.login import LoginForm
 from form.post import PostForm
 from form.register import RegisterForm
+from form.delete import DeleteForm
 
 app = Flask(__name__)
 app.config.from_object(Config)
 
 
+class Anonymous(AnonymousUserMixin):
+    def __init__(self):
+        self.id = '0'
+
+
 login_manager = LoginManager()
+login_manager.anonymous_user = Anonymous
 login_manager.init_app(app)
 
 
@@ -28,17 +40,24 @@ def allowed_file(filename):
            filename.rsplit('.', 1)[1] in app.config['ALLOWED_EXTENSIONS']
 
 
-def upload_file():
-    if request.method == 'POST':
-        file = request.files['file']
-        if file and allowed_file(file.filename):
-            filename = secure_filename(file.filename)
-            file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-
-
 def main():
     db_session.global_init("db/users.sqlite")
     app.run()
+
+
+@app.before_request
+def before_request():
+    g.user = current_user
+
+
+@app.route('/game/<id>', methods=['GET', 'POST'])
+def game(id):
+    return render_template("game.html", id=id)
+
+
+@app.route('/apps')
+def apps():
+    return render_template("apps.html")
 
 
 @app.route("/")
@@ -99,40 +118,231 @@ def logout():
     return redirect("/")
 
 
-@app.route('/user')
-def user_profile():
-    return render_template('profile_user.html', title='You')
+@app.route("/delete", methods=['GET', 'POST'])
+def delete():
+    form = DeleteForm()
+    if form.validate_on_submit():
+        if form.password.data != form.password_again.data:
+            return render_template('delete.html', title='Deletion',
+                                   form=form,
+                                   message="Пароли не совпадают")
+        else:
+            session = db_session.create_session()
+            my = g.user.id
+            user = session.query(User).filter(User.id == my).first()
+            if user.check_password(form.password.data):
+                session.delete(user)
+                session.commit()
+                return redirect('/register')
+    return render_template('delete.html', title='Deletion', form=form)
 
 
-@app.route('/group', methods=['GET', 'POST'])
-def group():
+@app.route('/user/<id>', methods=['GET', 'POST'])
+def user_profile(id):
+    session = db_session.create_session()
+    user = session.query(User).filter_by(id=id).first()
+    form = PostForm()
+    if user == None:
+        flash('User ' + id + ' not found.')
+        return render_template('login.html')
+    else:
+        you = user.name
+        my = g.user.id
+        info = user.about
+        user_id = int(id)
+        if my == user_id:
+            if form.validate_on_submit():
+                file = form.file_url.data
+                if file and allowed_file(file.filename):
+                    filename = secure_filename(file.filename)
+                    way_to_file = os.path.join(app.config['UPLOAD_FOLDER_USER'], filename)
+                    file.save(way_to_file)
+                    post = PostUser(text=form.text.data,
+                                    date=datetime.datetime.now().strftime("%A %d %b %Y (%H:%M)"),
+                                    autor_id=my,
+                                    file=way_to_file)
+                    session.add(post)
+                    session.commit()
+                    return redirect(f'{id}')
+                elif file.filename == '':
+                    post = PostUser(text=form.text.data,
+                                    date=datetime.datetime.now().strftime("%A %d %b %Y (%H:%M)"),
+                                    autor_id=my)
+                    session.add(post)
+                    session.commit()
+                    return redirect(f'{id}')
+            posts = session.query(PostUser).filter_by(autor_id=user_id).order_by(PostUser.id.desc())
+            return render_template('profile_user.html', title=you, you=you, user_id=user_id, my_id=my, info=info,
+                                   form=form, posts=posts, avatar=user.avatar)
+        else:
+            posts = session.query(PostUser).filter_by(autor_id=user_id).order_by(PostUser.id.desc())
+            return render_template('profile_user.html', title=you, you=you, user_id=user_id, my_id=my, info=info,
+                                   form=form, posts=posts, avatar=user.avatar)
+
+
+@app.route('/post_edit/<int:id>', methods=['GET', 'POST'])
+@login_required
+def post_edit(id):
+    form = PostForm()
+    session = db_session.create_session()
+    post = session.query(PostUser).filter_by(id=id).first()
+    prev_text = post.text
+    my = g.user.id
+    if request.method == 'POST':
+        new_text = request.form.get("area")
+        file = form.file_url.data
+        if file and allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+            way_to_file = os.path.join(app.config['UPLOAD_FOLDER_USER'], filename)
+            file.save(way_to_file)
+            post.text = new_text
+            post.file = way_to_file
+            session.commit()
+            return redirect(f'/user/{g.user.id}')
+        elif file.filename == '':
+            post.text = new_text
+            session.commit()
+            return redirect(f'/user/{g.user.id}')
+    return render_template('delete_post.html', form=form, prev_text=prev_text)
+
+
+@app.route('/post_delete/<int:id>', methods=['GET', 'POST'])
+@login_required
+def post_delete(id):
+    session = db_session.create_session()
+    news = session.query(Post).filter(Post.id == id,
+                                      Post.autor_id == g.user.id).first()
+    if news:
+        session.delete(news)
+        session.commit()
+    else:
+        os.abort(404)
+    return redirect(f'/user/{g.user.id}')
+
+
+@app.route('/edit', methods=['GET', 'POST'])
+def edit():
+    form = GhangeIngoForm()
+    user_id = g.user.id
+    if request.method == "GET":
+        session = db_session.create_session()
+        user = session.query(User).filter_by(id=int(user_id)).first()
+        if user:
+            form.name.data = user.name
+            form.info.data = user.about
+            form.avatar.data = user.avatar
+        else:
+            os.abort(404)
+    if form.validate_on_submit():
+        session = db_session.create_session()
+        user = session.query(User).filter_by(id=int(user_id)).first()
+        if user:
+            way_to_file = url_for('static', filename='img/boy.png')
+            file = form.avatar.data
+            if file and allowed_file(file.filename):
+                filename = secure_filename(file.filename)
+                way_to_file = os.path.join(app.config['UPLOAD_FOLDER_USER'], filename)
+                file.save(way_to_file)
+            user.name = form.name.data
+            user.about = form.info.data
+            user.avatar = way_to_file
+            session.commit()
+            return redirect(f'/user/{user_id}')
+        else:
+            os.abort(404)
+    num = random.randint(1, 35)
+    name = "img/edit/edit" + str(num) + ".jpg"
+    return render_template('edit_group.html', info=user.about, name=user.name, form=form, im_user=1, pic=name)
+
+
+@app.route('/group/<int:id_group>', methods=['GET', 'POST'])
+def group(id_group):
     session = db_session.create_session()
     form = PostForm()
     if form.validate_on_submit():
+        way_to_file = ""
         file = form.file_url.data
         if file and allowed_file(file.filename):
             filename = secure_filename(file.filename)
             way_to_file = os.path.join(app.config['UPLOAD_FOLDER_GROUP'], filename)
             file.save(way_to_file)
         post = Post(text=form.text.data,
-                    date=datetime.datetime.now().strftime("%A %d %b %Y (%H:%M %Z)"),
-                    autor_id=1,
+                    date=datetime.datetime.now().strftime("%A %d %b %Y (%H:%M)"),
+                    autor_id=id_group,
                     file=way_to_file)
         session.add(post)
         session.commit()
-        return redirect('/group')
-    posts = session.query(Post).filter(Post.autor_id == 1)
-    return render_template('group.html', title='Авторизация', form=form, posts=posts)
+        return redirect(f'/group/{id_group}')
+    posts = session.query(Post).filter(Post.autor_id == id_group).order_by(Post.id.desc())
+    group_info = session.query(Group).filter_by(id=id_group).first()
+    return render_template('group.html', title='Авторизация', form=form, posts=posts, info=group_info,
+                           avatar=group_info.avatar)
 
 
-@app.route('/makegroup')
-def make_group():
-    return render_template('group.html', title='you')
+@app.route('/groups')
+def list_group():
+    session = db_session.create_session()
+    groups = session.query(Group).all()
+    return render_template('group_list.html', title='you', groups=groups)
 
 
-@app.route('/group/<int:id_group>')
+@app.route('/group_delete/<int:id_group>', methods=['GET', 'POST'])
+def delete_group(id_group):
+    session = db_session.create_session()
+    group = session.query(Group).filter_by(id=id_group).first()
+    if group:
+        for post in session.query(Post).filter(Post.autor_id == id_group):
+            session.delete(post)
+        session.delete(group)
+        session.commit()
+    else:
+        os.abort(404)
+    return redirect('/')
+
+
+@app.route('/group_edit/<int:id_group>', methods=['GET', 'POST'])
 def edit_group(id_group):
-    return render_template('group.html', title='group edit')
+    form = GhangeIngoForm()
+    if request.method == "GET":
+        session = db_session.create_session()
+        group = session.query(Group).filter_by(id=id_group).first()
+        if group:
+            form.name.data = group.name
+            form.info.data = group.info
+            form.avatar.data = group.avatar
+        else:
+            os.abort(404)
+    if form.validate_on_submit():
+        session = db_session.create_session()
+        group = session.query(Group).filter_by(id=id_group).first()
+        if group:
+            way_to_file = url_for('static', filename='img/deer.png')
+            file = form.avatar.data
+            if file and allowed_file(file.filename):
+                filename = secure_filename(file.filename)
+                way_to_file = os.path.join(app.config['UPLOAD_FOLDER_GROUP'], filename)
+                file.save(way_to_file)
+            group.name = form.name.data
+            group.info = form.info.data
+            group.avatar = way_to_file
+            session.commit()
+            return redirect(f'/group/{id_group}')
+        else:
+            os.abort(404)
+    num = random.randint(1, 21)
+    name = "img/edit/edit" + str(num) + ".jpg"
+    return render_template('edit_group.html', info=group, form=form, im_user=0, pic=name)
+
+
+@app.route('/joke')
+def random_joke():
+    api_server = "https://icanhazdadjoke.com/slack"
+    response = requests.get(api_server)
+    json_response = response.json(strict=False)
+    picture = json_response["attachments"][0]["text"]
+    num = random.randint(1, 21)
+    name = "img/laugh/laugh" + str(num) + ".jpg"
+    return render_template("joke.html", joke=picture, name=name)
 
 
 if __name__ == '__main__':

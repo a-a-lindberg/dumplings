@@ -1,14 +1,9 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, SubmitField
-from wtforms.validators import ValidationError
+from wtforms import StringField, SubmitField, FileField, TextAreaField
 
 
-def len_info(field):
-    if len(field.data) > 85:
-        raise ValidationError('Info must be less than 85 characters')
-
-
-class RegisterForm(FlaskForm):
+class GhangeIngoForm(FlaskForm):
     name = StringField('Name of group')
-    info = StringField('Info', len_info)
+    info = TextAreaField('Info')
+    avatar = FileField()
     submit = SubmitField('Submit')

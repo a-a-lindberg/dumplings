@@ -16,5 +16,5 @@ class Group(SqlAlchemyBase, SerializerMixin):
     admin_list = sqlalchemy.Column(sqlalchemy.String, nullable=True)
     posts_list = sqlalchemy.Column(sqlalchemy.String, nullable=True)
     followers_ids = sqlalchemy.Column(sqlalchemy.String, nullable=True)
-
+    avatar = sqlalchemy.Column(sqlalchemy.String, nullable=True)
     posts = relationship("Post", backref="group")
