@@ -14,7 +14,7 @@ from data.group import Group
 from data.posts import Post
 from data.user_posts import PostUser
 from data.users import User
-from form.edit_group import GhangeIngoForm
+from form.edit_group import ChangeIngoForm
 from form.login import LoginForm
 from form.post import PostForm
 from form.register import RegisterForm
@@ -80,7 +80,8 @@ def reqister():
                                    message="Такой пользователь уже есть")
         user = User(
             name=form.name.data,
-            email=form.email.data
+            email=form.email.data,
+            avatar=url_for('static', filename='img/boy.png')
         )
         user.set_password(form.password.data)
         session.add(user)
@@ -222,7 +223,7 @@ def post_delete(id):
 
 @app.route('/edit', methods=['GET', 'POST'])
 def edit():
-    form = GhangeIngoForm()
+    form = ChangeIngoForm()
     user_id = g.user.id
     if request.method == "GET":
         session = db_session.create_session()
@@ -302,7 +303,7 @@ def delete_group(id_group):
 
 @app.route('/group_edit/<int:id_group>', methods=['GET', 'POST'])
 def edit_group(id_group):
-    form = GhangeIngoForm()
+    form = ChangeIngoForm()
     if request.method == "GET":
         session = db_session.create_session()
         group = session.query(Group).filter_by(id=id_group).first()
@@ -332,6 +333,23 @@ def edit_group(id_group):
     num = random.randint(1, 21)
     name = "img/edit/edit" + str(num) + ".jpg"
     return render_template('edit_group.html', info=group, form=form, im_user=0, pic=name)
+
+
+@app.route('/make_group', methods=['GET', 'POST'])
+def make_group():
+    form = ChangeIngoForm()
+    if form.validate_on_submit():
+        session = db_session.create_session()
+        group = Group(
+            name=form.name.data,
+            info=form.info.data,
+            avatar=url_for('static', filename='img/deer.png'),
+            admin=g.user.id
+        )
+        session.add(group)
+        session.commit()
+        return redirect(f'/group/{group.id}')
+    return render_template('edit_group.html', title='Groups', form=form)
 
 
 @app.route('/joke')

@@ -21,6 +21,7 @@ class User(SqlAlchemyBase, SerializerMixin, UserMixin):
     avatar = sqlalchemy.Column(sqlalchemy.String, nullable=True)
 
     posts_user = relationship("PostUser", backref="users")
+    own = orm.relation("Group", backref="group")
 
 
 

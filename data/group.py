@@ -11,10 +11,11 @@ class Group(SqlAlchemyBase, SerializerMixin):
     id = sqlalchemy.Column(sqlalchemy.Integer,
                            primary_key=True, autoincrement=True)
     name = sqlalchemy.Column(sqlalchemy.String, nullable=True)
-    followers = sqlalchemy.Column(sqlalchemy.Integer, nullable=True)
     info = sqlalchemy.Column(sqlalchemy.String, nullable=True)
-    admin_list = sqlalchemy.Column(sqlalchemy.String, nullable=True)
+    admin = sqlalchemy.Column(sqlalchemy.Integer, sqlalchemy.ForeignKey("users.id"))
     posts_list = sqlalchemy.Column(sqlalchemy.String, nullable=True)
     followers_ids = sqlalchemy.Column(sqlalchemy.String, nullable=True)
     avatar = sqlalchemy.Column(sqlalchemy.String, nullable=True)
+
     posts = relationship("Post", backref="group")
+    user = relationship("User", backref="users")
