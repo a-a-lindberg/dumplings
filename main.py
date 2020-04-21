@@ -60,9 +60,20 @@ def apps():
     return render_template("apps.html")
 
 
-@app.route("/")
+@app.route("/", methods=['GET', 'POST'])
 def index():
-    return render_template("base.html")
+    session = db_session.create_session()
+    if request.method == "POST":
+        if request.form.get("options") == 'user':
+            my = g.user.id
+            posts = session.query(PostUser).filter(PostUser.autor_id != my).order_by(PostUser.id.desc())
+            session.close()
+            return render_template('start_page.html', posts=posts, check='checked')
+        else:
+            posts = session.query(Post).order_by(Post.id.desc())
+            return render_template('start_page.html', posts=posts, check2='checked')
+    return render_template('start_page.html')
+
 
 
 @app.route('/register', methods=['GET', 'POST'])
@@ -364,4 +375,5 @@ def random_joke():
 
 
 if __name__ == '__main__':
+    app.debug = True
     main()
