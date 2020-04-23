@@ -68,10 +68,10 @@ def index():
         if request.form.get("options") == 'user':
             my = g.user.id
             posts = session.query(PostUser).filter(PostUser.autor_id != my).order_by(PostUser.id.desc())
-            return render_template('start_page.html', posts=posts, check='checked')
+            return render_template('start_page.html', posts=posts, check='checked', link='user')
         else:
             posts = session.query(Post).order_by(Post.id.desc())
-            return render_template('start_page.html', posts=posts, check2='checked')
+            return render_template('start_page.html', posts=posts, check2='checked', link='group')
     return render_template('start_page.html')
 
 
@@ -184,11 +184,11 @@ def user_profile(id):
                     return redirect(f'{id}')
             posts = session.query(PostUser).filter_by(autor_id=user_id).order_by(PostUser.id.desc())
             return render_template('profile_user.html', title=you, you=you, user_id=user_id, my_id=my, info=info,
-                                   form=form, posts=posts, avatar=user.avatar)
+                                   form=form, posts=posts, avatar=user.avatar, id=id)
         else:
             posts = session.query(PostUser).filter_by(autor_id=user_id).order_by(PostUser.id.desc())
             return render_template('profile_user.html', title=you, you=you, user_id=user_id, my_id=my, info=info,
-                                   form=form, posts=posts, avatar=user.avatar)
+                                   form=form, posts=posts, avatar=user.avatar, id=id)
 
 
 @app.route('/post_edit/<int:id>', methods=['GET', 'POST'])
@@ -222,7 +222,7 @@ def post_edit(id):
 def post_delete(id):
     session = db_session.create_session()
     posts = session.query(PostUser).filter(PostUser.id == id,
-                                      PostUser.autor_id == g.user.id).first()
+                                           PostUser.autor_id == g.user.id).first()
     if posts:
         session.delete(posts)
         session.commit()
@@ -270,6 +270,7 @@ def edit():
 def group(id_group):
     session = db_session.create_session()
     form = PostForm()
+    my = g.user.id
     if form.validate_on_submit():
         way_to_file = ""
         file = form.file_url.data
@@ -287,7 +288,7 @@ def group(id_group):
     posts = session.query(Post).filter(Post.autor_id == id_group).order_by(Post.id.desc())
     group_info = session.query(Group).filter_by(id=id_group).first()
     return render_template('group.html', title='Авторизация', form=form, posts=posts, info=group_info,
-                           avatar=group_info.avatar)
+                           avatar=group_info.avatar, id=id_group, my=my)
 
 
 @app.route('/groups')

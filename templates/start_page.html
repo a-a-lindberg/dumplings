@@ -86,7 +86,9 @@ p.first-paragraph {
         <input type="radio" name="options" id="option2" value="group" {{check2}}>
             <span class="checkmark"></span>
         </label>
+        <div style="padding-left: 15px">
         <p class="btn btn-sm btn-outline-warning"><input type=submit value=Show>SHOW<i class="fas fa-angle-double-right"></i></p>
+        </div>
     </div>
 
 </form>
@@ -100,7 +102,15 @@ p.first-paragraph {
                             <img class="rounded-circle" width="50" src="../{{item.autor.avatar}}" alt="">
                         </div>
                         <div class="ml-2">
-                            <div class="h5 m-0 color-text"><a href="/">{{ item.autor.name }}</a></div>
+                            <div class="h5 m-0 color-text"><a href="/{{link}}/{{item.autor_id}}">{{ item.autor.name }}</a></div>
+                            <div class="h7 text-muted">@{{item.autor_id}}</div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="dropdown">
+                            <button class="btn btn-link dropdown-toggle" type="button" id="gedf-drop1" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                <i class="fa fa-ellipsis-h"></i>
+                            </button>
                         </div>
                     </div>
                 </div>
