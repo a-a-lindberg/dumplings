@@ -97,8 +97,8 @@
                             <img class="rounded-circle" width="50" src="../{{avatar}}" alt="">
                         </div>
                         <div class="ml-2">
-                            <div class="h5 m-0 color-text">@GroupIDName</div>
-                            <div class="h7 text-muted">GroupName</div>
+                            <div class="h5 m-0 color-text">{{name}}</div>
+                            <div class="h7 text-muted">@{{id}}</div>
                         </div>
                     </div>
                     <div>
@@ -108,8 +108,8 @@
                             </button>
                             <div class="dropdown-menu dropdown-menu-right" aria-labelledby="gedf-drop1">
                                 <div class="h6 dropdown-header">Configuration</div>
-                                <a class="dropdown-item" href="/post_edit/{{ item.id }}">Edit</a>
-                                <a class="dropdown-item" href="/post_delete/{{ item.id }}">Delete</a>
+                                <a class="dropdown-item" href="/group_post_edit/{{ item.id }}">Edit</a>
+                                <a class="dropdown-item" href="/group_post_delete/{{ item.id }}">Delete</a>
                             </div>
                         </div>
                     </div>
