@@ -68,10 +68,10 @@ def index():
             my = g.user.id
             posts = session.query(PostUser).filter(PostUser.autor_id != my).order_by(PostUser.id.desc())
             session.close()
-            return render_template('start_page.html', posts=posts, check='checked')
+            return render_template('start_page.html', posts=posts, check='checked', link='user')
         else:
             posts = session.query(Post).order_by(Post.id.desc())
-            return render_template('start_page.html', posts=posts, check2='checked')
+            return render_template('start_page.html', posts=posts, check2='checked', link='group')
     return render_template('start_page.html')
 
 
@@ -271,6 +271,7 @@ def edit():
 def group(id_group):
     session = db_session.create_session()
     form = PostForm()
+    my = g.user.id
     if form.validate_on_submit():
         way_to_file = ""
         file = form.file_url.data
@@ -289,7 +290,7 @@ def group(id_group):
     group_info = session.query(Group).filter_by(id=id_group).first()
     name = group_info.name
     return render_template('group.html', title='Авторизация', form=form, posts=posts, info=group_info,
-                           avatar=group_info.avatar, name=name, id=id_group)
+                           avatar=group_info.avatar, name=name, id=id_group, my=my)
 
 
 @app.route('/groups')
