@@ -248,7 +248,7 @@ def edit():
         session = db_session.create_session()
         user = session.query(User).filter_by(id=int(user_id)).first()
         if user:
-            way_to_file = url_for('static', filename='img/boy.png')
+            way_to_file = user.avatar
             file = form.avatar.data
             if file and allowed_file(file.filename):
                 filename = secure_filename(file.filename)
@@ -327,7 +327,7 @@ def edit_group(id_group):
         session = db_session.create_session()
         group = session.query(Group).filter_by(id=id_group).first()
         if group:
-            way_to_file = url_for('static', filename='img/deer.png')
+            way_to_file = group.avatar
             file = form.avatar.data
             if file and allowed_file(file.filename):
                 filename = secure_filename(file.filename)
@@ -360,6 +360,44 @@ def make_group():
         session.commit()
         return redirect(f'/group/{group.id}')
     return render_template('edit_group.html', title='Groups', form=form)
+
+
+@app.route('/group_post_edit/<int:id>', methods=['GET', 'POST'])
+def gr_post_edit(id):
+    form = PostForm()
+    session = db_session.create_session()
+    post = session.query(Post).filter_by(id=id).first()
+    prev_text = post.text
+    if request.method == 'POST':
+        new_text = request.form.get("area")
+        file = form.file_url.data
+        if file and allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+            way_to_file = os.path.join(app.config['UPLOAD_FOLDER_USER'], filename)
+            file.save(way_to_file)
+            post.text = new_text
+            post.file = way_to_file
+            session.commit()
+            return redirect(f'/group/{post.autor_id}')
+        elif file.filename == '':
+            post.text = new_text
+            session.commit()
+            return redirect(f'/group/{post.autor_id}')
+    return render_template('delete_post.html', form=form, prev_text=prev_text)
+
+
+@app.route('/group_post_delete/<int:id>', methods=['GET', 'POST'])
+@login_required
+def gr_post_delete(id):
+    session = db_session.create_session()
+    post = session.query(Post).filter(Post.id == id,
+                                      Post.autor_id == g.user.id).first()
+    if post:
+        session.delete(post)
+        session.commit()
+    else:
+        os.abort(404)
+    return redirect(f'/group/{post.autor_id}')
 
 
 @app.route('/follow/<group_id>')
