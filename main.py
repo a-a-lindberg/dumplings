@@ -6,6 +6,7 @@ import random
 from flask_login import AnonymousUserMixin
 from flask import render_template, Flask, request, flash, g, url_for
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
+from flask_restful import abort
 from werkzeug.utils import redirect, secure_filename
 
 from config import Config
@@ -67,13 +68,11 @@ def index():
         if request.form.get("options") == 'user':
             my = g.user.id
             posts = session.query(PostUser).filter(PostUser.autor_id != my).order_by(PostUser.id.desc())
-            session.close()
             return render_template('start_page.html', posts=posts, check='checked')
         else:
             posts = session.query(Post).order_by(Post.id.desc())
             return render_template('start_page.html', posts=posts, check2='checked')
     return render_template('start_page.html')
-
 
 
 @app.route('/register', methods=['GET', 'POST'])
@@ -222,13 +221,13 @@ def post_edit(id):
 @login_required
 def post_delete(id):
     session = db_session.create_session()
-    news = session.query(Post).filter(Post.id == id,
-                                      Post.autor_id == g.user.id).first()
-    if news:
-        session.delete(news)
+    posts = session.query(PostUser).filter(PostUser.id == id,
+                                      PostUser.autor_id == g.user.id).first()
+    if posts:
+        session.delete(posts)
         session.commit()
     else:
-        os.abort(404)
+        abort(404)
     return redirect(f'/user/{g.user.id}')
 
 
@@ -361,6 +360,26 @@ def make_group():
         session.commit()
         return redirect(f'/group/{group.id}')
     return render_template('edit_group.html', title='Groups', form=form)
+
+
+@app.route('/follow/<group_id>')
+@login_required
+def follow(group_id):
+    # session = db_session.create_session()
+    # group = session.query(Group).filter_by(id=group_id).first()
+    # current_user.follow(group)
+    # session.commit()
+    return redirect(f'/group/{group_id}')
+
+
+@app.route('/unfollow/<group_id>')
+def unfollow(group_id):
+    # session = db_session.create_session()
+    # group = session.query(Group).filter_by(id=group_id).first()
+    # session.close()
+    # current_user.unfollow(group)
+    # session.commit()
+    return redirect(f'/')
 
 
 @app.route('/joke')

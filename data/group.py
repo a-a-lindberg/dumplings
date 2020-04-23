@@ -1,7 +1,8 @@
 import sqlalchemy
-from sqlalchemy import orm
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, backref
 from sqlalchemy_serializer import SerializerMixin
+
+from data.followers import user_group
 from .db_session import SqlAlchemyBase
 
 
@@ -14,8 +15,8 @@ class Group(SqlAlchemyBase, SerializerMixin):
     info = sqlalchemy.Column(sqlalchemy.String, nullable=True)
     admin = sqlalchemy.Column(sqlalchemy.Integer, sqlalchemy.ForeignKey("users.id"))
     posts_list = sqlalchemy.Column(sqlalchemy.String, nullable=True)
-    followers_ids = sqlalchemy.Column(sqlalchemy.String, nullable=True)
     avatar = sqlalchemy.Column(sqlalchemy.String, nullable=True)
 
     posts = relationship("Post", backref="group")
     user = relationship("User", backref="users")
+    followed = relationship('User', secondary=user_group)

@@ -1,10 +1,11 @@
 import sqlalchemy
 from sqlalchemy import orm
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, backref
 from sqlalchemy_serializer import SerializerMixin
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 
+from data.followers import user_group
 from .db_session import SqlAlchemyBase
 
 
@@ -21,12 +22,20 @@ class User(SqlAlchemyBase, SerializerMixin, UserMixin):
     avatar = sqlalchemy.Column(sqlalchemy.String, nullable=True)
 
     posts_user = relationship("PostUser", backref="users")
-    own = orm.relation("Group", backref="group")
+    own = orm.relation("Group", backref="groups")
+    follower = relationship('Group', secondary=user_group, lazy='dynamic')
 
+    def follow(self, group):
+        if not self.is_following(group):
+            self.follower.append(group)
 
+    def unfollow(self, group):
+        if self.is_following(group):
+            self.follower.remove(group)
 
-    def __str__(self):
-        return f"{self.surname}, {self.name}, {self.age}"
+    def is_following(self, group):
+        return self.follower.filter(
+            user_group.c.followed_id == group.id).count() > 0
 
     def set_password(self, password):
         self.hashed_password = generate_password_hash(password)
