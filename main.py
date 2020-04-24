@@ -269,6 +269,7 @@ def edit():
 @app.route('/group/<int:id_group>', methods=['GET', 'POST'])
 def group(id_group):
     session = db_session.create_session()
+    user = session.merge(current_user)
     form = PostForm()
     my = g.user.id
     if form.validate_on_submit():
@@ -288,7 +289,7 @@ def group(id_group):
     posts = session.query(Post).filter(Post.autor_id == id_group).order_by(Post.id.desc())
     group_info = session.query(Group).filter_by(id=id_group).first()
     return render_template('group.html', title='Авторизация', form=form, posts=posts, info=group_info,
-                           avatar=group_info.avatar, id=id_group, my=my)
+                           avatar=group_info.avatar, id=id_group, my=my, user=user)
 
 
 @app.route('/groups')
@@ -404,20 +405,21 @@ def gr_post_delete(id):
 @app.route('/follow/<group_id>')
 @login_required
 def follow(group_id):
-    # session = db_session.create_session()
-    # group = session.query(Group).filter_by(id=group_id).first()
-    # current_user.follow(group)
-    # session.commit()
+    session = db_session.create_session()
+    user = session.merge(current_user)
+    group = session.query(Group).filter_by(id=group_id).first()
+    user.follow(group)
+    session.commit()
     return redirect(f'/group/{group_id}')
 
 
 @app.route('/unfollow/<group_id>')
 def unfollow(group_id):
-    # session = db_session.create_session()
-    # group = session.query(Group).filter_by(id=group_id).first()
-    # session.close()
-    # current_user.unfollow(group)
-    # session.commit()
+    session = db_session.create_session()
+    user = session.merge(current_user)
+    group = session.query(Group).filter_by(id=group_id).first()
+    user.unfollow(group)
+    session.commit()
     return redirect(f'/')
 
 
